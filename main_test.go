@@ -98,15 +98,15 @@ func TestCafeCount(t *testing.T) {
 			handler.ServeHTTP(response, req)
 
 			// checking status code
-			assert.Equal(t, response.Code, http.StatusOK)
+			assert.Equal(t, response.Code, http.StatusOK, "неверный статус-код")
 
 			result := response.Body.String()
 			slice := strings.Split(result, `,`)
 			// exception for the "zero" result, cause length of empty slice won't be 0
 			if result == "" {
-				assert.Len(t, slice, 1) // special checking for empty result: len(slice) = 1
+				assert.Len(t, slice, 1, "ошибка при нулевом результате") // special checking for empty result: len(slice) = 1
 			} else {
-				assert.Len(t, slice, request.want)
+				assert.Len(t, slice, request.want, "ошибка по количеству выданных кафе в городе %s", city)
 			}
 		}
 	}
@@ -118,20 +118,19 @@ func TestCafeSearch(t *testing.T) {
 		search    string
 		wantCount int
 	}
-
 	// defining map for using in testing get-requests for both cities
 	requests := map[string][]results{
 		"moscow": {
 			{search: "", wantCount: 5},
 			{search: "фасоль", wantCount: 0},
 			{search: "кофе", wantCount: 2},
-			{search: "вилка", wantCount: 1},
+			{search: "Вилка", wantCount: 1},
 		},
 		"tula": {
 			{search: "", wantCount: 3},
-			{search: "мир", wantCount: 1},
+			{search: "Мир", wantCount: 1},
 			{search: "завтрак", wantCount: 1},
-			{search: "за", wantCount: 2}, // test for the part of word
+			{search: "ЗА", wantCount: 2}, // test for the part of word
 		},
 	}
 	// testing mainhandle in main.go
@@ -149,15 +148,22 @@ func TestCafeSearch(t *testing.T) {
 			handler.ServeHTTP(response, req)
 
 			// checking status code
-			assert.Equal(t, response.Code, http.StatusOK)
+			assert.Equal(t, response.Code, http.StatusOK, "неверный статус-код")
 
 			result := response.Body.String()
 			slice := strings.Split(result, `,`)
 			// exception for the "zero" result, cause length of empty slice won't be 0
 			if result == "" {
-				assert.Len(t, slice, 1) // special checking for empty result: len(slice) = 1
+				assert.Len(t, slice, 1, "ошибка при нулевом результате") // special checking for empty result: len(slice) = 1
 			} else {
-				assert.Len(t, slice, request.wantCount)
+				assert.Len(t, slice, request.wantCount, "ошибка при выводах кафе, город %s", city)
+
+				//checking if the searching word contains in response, checking each item in slice
+				for _, cafeName := range slice {
+					word := strings.ToLower(request.search)
+					cafe := strings.ToLower(cafeName)
+					assert.Equal(t, strings.Contains(cafe, word), true, "ошибка при %s, кафе %s, слово %s", city, cafeName, word)
+				}
 			}
 		}
 	}
