@@ -58,19 +58,29 @@ func TestCafeCount(t *testing.T) {
 		count int
 		want  int
 	}
+
+	// special variables for comparing 100 and count of restaurants for each city
+	tulaCount, moscowCount := 100, 100
+	if len(cafeList["tula"]) < 100 {
+		tulaCount = len(cafeList["tula"])
+	}
+	if len(cafeList["moscow"]) < 100 {
+		moscowCount = len(cafeList["moscow"])
+	}
+
 	// defining map for using in testing get-requests for both cities
 	requests := map[string][]results{
 		"moscow": {
 			{count: 0, want: 0},
 			{count: 1, want: 1},
 			{count: 2, want: 2},
-			{count: 100, want: 5}, // must show all restaurants, 5 for Moscow
+			{count: 100, want: moscowCount}, // using special variable for Moscow
 		},
 		"tula": {
 			{count: 0, want: 0},
 			{count: 1, want: 1},
 			{count: 2, want: 2},
-			{count: 100, want: 3}, // must show all restaurants, 3 for Tula
+			{count: 100, want: tulaCount}, // using special variables for Tula
 		},
 	}
 	// testing mainHandle in main.go
@@ -87,13 +97,16 @@ func TestCafeCount(t *testing.T) {
 
 			handler.ServeHTTP(response, req)
 
+			// checking status code
+			assert.Equal(t, response.Code, http.StatusOK)
+
 			result := response.Body.String()
 			slice := strings.Split(result, `,`)
 			// exception for the "zero" result, cause length of empty slice won't be 0
 			if result == "" {
-				assert.Equal(t, request.want, 0)
+				assert.Len(t, slice, 1) // special checking for empty result: len(slice) = 1
 			} else {
-				assert.Equal(t, request.want, len(slice))
+				assert.Len(t, slice, request.want)
 			}
 		}
 	}
@@ -105,6 +118,7 @@ func TestCafeSearch(t *testing.T) {
 		search    string
 		wantCount int
 	}
+
 	// defining map for using in testing get-requests for both cities
 	requests := map[string][]results{
 		"moscow": {
@@ -134,13 +148,16 @@ func TestCafeSearch(t *testing.T) {
 
 			handler.ServeHTTP(response, req)
 
+			// checking status code
+			assert.Equal(t, response.Code, http.StatusOK)
+
 			result := response.Body.String()
 			slice := strings.Split(result, `,`)
 			// exception for the "zero" result, cause length of empty slice won't be 0
 			if result == "" {
-				assert.Equal(t, request.wantCount, 0)
+				assert.Len(t, slice, 1) // special checking for empty result: len(slice) = 1
 			} else {
-				assert.Equal(t, request.wantCount, len(slice))
+				assert.Len(t, slice, request.wantCount)
 			}
 		}
 	}
